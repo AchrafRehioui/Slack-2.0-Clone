@@ -17,7 +17,7 @@ function Header() {
 
             <HeaderSearch>
                 <SearchIcon />
-                <input placeholder="Search Achraf" />
+                <input placeholder="Search REACT" />
             </HeaderSearch>
 
             <HeaderRight>
