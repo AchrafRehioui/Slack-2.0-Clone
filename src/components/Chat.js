@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import styled from 'styled-components';
 import StarBorderOutlinedIcon from '@material-ui/icons/StarBorderOutlined';
@@ -7,15 +7,17 @@ import { selectRoomId } from '../features/appSlice';
 import ChatInput from './ChatInput';
 import { useCollection, useDocument } from 'react-firebase-hooks/firestore';
 import { db } from '../firebase';
+import Message from './Message';
 
 function Chat() {
 
+    const chatRef = useRef(null);
     const roomId = useSelector(selectRoomId);
     const [roomDetails] = useDocument(
         roomId && db.collection("rooms").doc(roomId)
     );
 
-    const [roomMessages] = useCollection(
+    const [roomMessages, loading] = useCollection(
         roomId &&
         db
             .collection("rooms")
@@ -24,50 +26,62 @@ function Chat() {
             .orderBy("timestamp", "asc")
     );
 
-    //console.log(roomDetails?.data());
-    //console.log(roomMessages);
+
+    useEffect(() => {
+        chatRef?.current?.scrollIntoView({
+            behavior: "smooth",
+        });
+    }, [roomId, loading])
 
     return (
         <ChatContainer>
-            <>
-                <Header>
-                    <HeaderLeft>
-                        <h4><strong>#{roomDetails?.data().name}</strong></h4>
-                        <StarBorderOutlinedIcon />
-                    </HeaderLeft>
+            {roomDetails && roomMessages && (
+                <>
+                    <Header>
+                        <HeaderLeft>
+                            <h4><strong>#{roomDetails?.data().name}</strong></h4>
+                            <StarBorderOutlinedIcon />
+                        </HeaderLeft>
 
-                    <HeaderRight>
-                        <p>
-                            <InfoOutlinedIcon /> Details
+                        <HeaderRight>
+                            <p>
+                                <InfoOutlinedIcon /> Details
                         </p>
-                    </HeaderRight>
-                </Header>
+                        </HeaderRight>
+                    </Header>
 
-                <ChatMessages>
-                    {roomMessages?.docs.map(doc => {
-                        const { message, timestamp, user, userImage } = doc.data();
+                    <ChatMessages>
+                        {roomMessages?.docs.map(doc => {
+                            const { message, timestamp, user, userImage } = doc.data();
 
-                        return (
-                            <Messages
-                                key={doc.id}
-                                message={message}
-                                timestamp={timestamp}
-                                user={user}
-                                userImage={userImage}
-                            />
-                        );
-                    })}
-                </ChatMessages>
-                <ChatInput
-                    channelName={roomDetails?.data().name}
-                    channelId={roomId}
-                />
-            </>
+                            return (
+                                <Message
+                                    key={doc.id}
+                                    message={message}
+                                    timestamp={timestamp}
+                                    user={user}
+                                    userImage={userImage}
+                                />
+                            );
+                        })}
+                        <ChatBottom ref={chatRef} />
+                    </ChatMessages>
+                    <ChatInput
+                        chatRef={chatRef}
+                        channelName={roomDetails?.data().name}
+                        channelId={roomId}
+                    />
+                </>
+            )}
+
         </ChatContainer>
     )
 }
 
 export default Chat;
+const ChatBottom = styled.div`
+    padding-bottom: 200px;
+`;
 
 const Header = styled.div`
     display: flex;
